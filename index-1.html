@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Feel of Goa — Staff Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: #1A0F0A;
+    color: #F5EDD8;
+    font-family: Georgia, serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .logo-label {
+    font-size: 10px;
+    letter-spacing: .35em;
+    color: #E8A850;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .logo-name {
+    font-size: 38px;
+    font-weight: 400;
+    text-align: center;
+    color: #F5EDD8;
+    margin-bottom: 6px;
+  }
+  .logo-tagline {
+    font-size: 13px;
+    color: #B89070;
+    text-align: center;
+    margin-bottom: 50px;
+    font-style: italic;
+  }
+
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: rgba(232,168,80,0.4);
+    margin: 0 auto 50px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    width: 100%;
+    max-width: 780px;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background: #2C1A10;
+    border: 1px solid rgba(232,168,80,0.15);
+    border-radius: 18px;
+    padding: 28px 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .25s, transform .2s, box-shadow .25s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .card:hover {
+    border-color: rgba(232,168,80,.55);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 20px rgba(232,168,80,.08);
+  }
+
+  .card-icon { font-size: 32px; }
+  .card-label {
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #E8A850;
+    font-family: system-ui, sans-serif;
+  }
+  .card-title {
+    font-size: 20px;
+    color: #F5EDD8;
+    font-weight: 400;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: #B89070;
+    line-height: 1.6;
+    font-family: system-ui, sans-serif;
+  }
+  .card-tag {
+    display: inline-block;
+    background: rgba(232,168,80,.1);
+    border: 1px solid rgba(232,168,80,.2);
+    color: #E8A850;
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 10px;
+    font-family: system-ui, sans-serif;
+    font-weight: 600;
+    width: fit-content;
+    margin-top: 4px;
+  }
+  .card-tag.green {
+    background: rgba(76,175,125,.1);
+    border-color: rgba(76,175,125,.25);
+    color: #4CAF7D;
+  }
+  .card-tag.red {
+    background: rgba(217,64,64,.1);
+    border-color: rgba(217,64,64,.25);
+    color: #D94040;
+  }
+  .card-tag.blue {
+    background: rgba(91,155,213,.1);
+    border-color: rgba(91,155,213,.25);
+    color: #5B9BD5;
+  }
+
+  /* Table QR section */
+  .qr-section {
+    width: 100%;
+    max-width: 780px;
+    background: #2C1A10;
+    border: 1px solid rgba(232,168,80,.15);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 48px;
+  }
+  .qr-section-title {
+    font-size: 13px;
+    color: #E8A850;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    margin-bottom: 6px;
+    font-family: system-ui, sans-serif;
+    font-size: 10px;
+  }
+  .qr-section-heading {
+    font-size: 18px;
+    color: #F5EDD8;
+    margin-bottom: 6px;
+  }
+  .qr-section-sub {
+    font-size: 12px;
+    color: #B89070;
+    font-family: system-ui, sans-serif;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .table-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .table-pill {
+    background: #3A2318;
+    border: 1px solid rgba(232,168,80,.2);
+    border-radius: 11px;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: #F5EDD8;
+    font-family: system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .table-pill:hover {
+    border-color: #E8A850;
+    background: rgba(232,168,80,.08);
+  }
+  .table-pill span {
+    font-size: 10px;
+    color: #B89070;
+    font-weight: 400;
+  }
+  .qr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(232,168,80,.1);
+    border: 1px solid rgba(232,168,80,.3);
+    color: #E8A850;
+    border-radius: 10px;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: system-ui, sans-serif;
+    transition: background .2s;
+  }
+  .qr-btn:hover { background: rgba(232,168,80,.18); }
+
+  .footer {
+    font-size: 11px;
+    color: #4a3020;
+    text-align: center;
+    font-family: system-ui, sans-serif;
+    line-height: 1.8;
+  }
+  .footer a { color: #7a5535; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="logo-label">Welcome to</div>
+<div class="logo-name">Feel of Goa Family Restaurant</div>
+<div class="logo-tagline">Fine Dining · Digital Ordering System</div>
+<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(217,64,64,.1);border:1px solid rgba(217,64,64,.25);color:#D94040;border-radius:20px;padding:5px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:system-ui,sans-serif;margin:0 auto 24px;width:fit-content;">🔒 Staff Access Only — Do Not Share This Link</div>
+<div class="divider"></div>
+
+<!-- MAIN NAVIGATION CARDS -->
+<div class="cards">
+
+  <a class="card" href="menu.html?table=1">
+    <div class="card-icon">🛒</div>
+    <div class="card-label">Customer</div>
+    <div class="card-title">Order Menu</div>
+    <div class="card-desc">Browse dishes, add to cart and place your order directly from your table.</div>
+    <div class="card-tag green">🪑 Preview — Table 1</div>
+  </a>
+
+  <a class="card" href="admin.html">
+    <div class="card-icon">📋</div>
+    <div class="card-label">Manager</div>
+    <div class="card-title">Admin Panel</div>
+    <div class="card-desc">Monitor all incoming orders, filter by status, and track the kitchen in real time.</div>
+    <div class="card-tag blue">👁 View Only</div>
+  </a>
+
+  <a class="card" href="chef.html">
+    <div class="card-icon">👨‍🍳</div>
+    <div class="card-label">Kitchen</div>
+    <div class="card-title">Chef Display</div>
+    <div class="card-desc">See active orders, start preparing and mark dishes ready for the table.</div>
+    <div class="card-tag red">🔒 Staff Only</div>
+  </a>
+
+  <a class="card" href="qr-tables.html">
+    <div class="card-icon">🪑</div>
+    <div class="card-label">Setup</div>
+    <div class="card-title">Table QR Codes</div>
+    <div class="card-desc">Generate and print unique QR codes for each table. Each code is locked to that table.</div>
+    <div class="card-tag red">🔒 Staff Only</div>
+  </a>
+
+</div>
+
+<!-- TABLE QUICK ACCESS -->
+<div class="qr-section">
+  <div class="qr-section-title">Customer Access</div>
+  <div class="qr-section-heading">Open Menu by Table</div>
+  <div class="qr-section-sub">
+    Each link below is what a customer sees after scanning their table's QR code.<br/>
+    The table number is automatically detected and locked — no manual entry needed.
+  </div>
+  <div class="table-pills">
+    <a class="table-pill" href="menu.html?table=1">🪑 Table 1 <span>Scan link</span></a>
+    <a class="table-pill" href="menu.html?table=2">🪑 Table 2 <span>Scan link</span></a>
+    <a class="table-pill" href="menu.html?table=3">🪑 Table 3 <span>Scan link</span></a>
+  </div>
+  <a class="qr-btn" href="qr-tables.html">🖨 Print QR Codes for All Tables →</a>
+</div>
+
+<div class="footer">
+  Feel of Goa Family Restaurant &nbsp;·&nbsp;
+  Orders sync live across all devices in real time
+</div>
+
+</body>
+</html>
