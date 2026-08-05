@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Feel of Goa Family Restaurant — Table QR Codes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { min-height: 100vh; background: transparent; color: #2C1A0E; font-family: system-ui, -apple-system, sans-serif; }
+
+  header {
+    background: #161616; border-bottom: 1px solid #2a2a2a;
+    padding: 16px 28px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .logo-sub { font-size: 9px; letter-spacing: .25em; color: #E8A850; text-transform: uppercase; }
+  .logo-title { font-size: 17px; font-weight: 700; }
+  .staff-badge {
+    background: rgba(217,64,64,.1); border: 1px solid rgba(217,64,64,.3);
+    color: #D94040; border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 700;
+  }
+  .nav-links { display: flex; gap: 10px; }
+  .nav-link {
+    font-size: 11px; color: #666; text-decoration: none;
+    background: rgba(255,255,255,.04); border: 1px solid #2a2a2a;
+    border-radius: 8px; padding: 6px 12px; transition: color .2s;
+  }
+  .nav-link:hover { color: #E8E8E8; }
+
+  .page-info {
+    max-width: 860px; margin: 32px auto 0; padding: 0 24px;
+  }
+  .page-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+  .page-sub { font-size: 13px; color: #666; margin-bottom: 6px; }
+  .page-note {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(232,168,80,.08); border: 1px solid rgba(232,168,80,.2);
+    color: #E8A850; border-radius: 8px; padding: 8px 14px; font-size: 12px; margin-top: 12px;
+  }
+
+  /* QR GRID */
+  .qr-grid {
+    max-width: 860px; margin: 28px auto 60px; padding: 0 24px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;
+  }
+
+  .qr-card {
+    background: #161616; border: 1px solid #2a2a2a; border-radius: 18px;
+    overflow: hidden; transition: border-color .2s;
+  }
+  .qr-card:hover { border-color: #E8A850; }
+
+  .qr-card-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #222;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .table-label { font-size: 22px; font-weight: 900; color: #fff; }
+  .table-sub { font-size: 11px; color: #555; margin-top: 2px; }
+  .table-num-badge {
+    width: 44px; height: 44px; background: rgba(232,168,80,.1);
+    border: 2px solid rgba(232,168,80,.3); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; color: #E8A850;
+  }
+
+  .qr-wrap {
+    padding: 20px; display: flex; justify-content: center; background: #fff; margin: 16px;
+    border-radius: 12px;
+  }
+  .qr-wrap canvas { display: block; }
+  .qr-loading {
+    width: 200px; height: 200px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; color: #aaa;
+  }
+  .qr-spinner {
+    width: 32px; height: 32px; border: 3px solid #eee; border-top-color: #E8A850;
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .qr-url {
+    margin: 0 16px; background: #111; border-radius: 8px; padding: 9px 12px;
+    font-size: 10px; color: #555; font-family: monospace; word-break: break-all; text-align: center;
+  }
+
+  .qr-card-footer { padding: 14px 16px 16px; display: flex; gap: 8px; }
+  .print-btn {
+    flex: 1; background: rgba(232,168,80,.1); border: 1px solid rgba(232,168,80,.25);
+    color: #E8A850; border-radius: 9px; padding: 10px; cursor: pointer;
+    font-size: 12px; font-weight: 700; font-family: inherit; transition: background .2s;
+  }
+  .print-btn:hover { background: rgba(232,168,80,.2); }
+  .test-btn {
+    flex: 1; background: rgba(76,175,125,.08); border: 1px solid rgba(76,175,125,.2);
+    color: #4CAF7D; border-radius: 9px; padding: 10px; cursor: pointer;
+    font-size: 12px; font-weight: 700; font-family: inherit; transition: background .2s; text-decoration: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .test-btn:hover { background: rgba(76,175,125,.18); }
+
+  /* PRINT STYLES */
+  @media print {
+    body { background: #fff; }
+    header, .page-info, .qr-card-footer, .qr-url { display: none !important; }
+    .qr-grid { grid-template-columns: repeat(3, 1fr); gap: 30px; margin: 20px; padding: 0; }
+    .qr-card { border: 2px solid #ddd; border-radius: 12px; break-inside: avoid; }
+    .qr-card:hover { border-color: #ddd; }
+    .qr-card-header { background: #f9f9f9; }
+    .table-label { color: #000; }
+    .table-num-badge { border-color: #ccc; color: #333; background: #f0f0f0; }
+    .qr-wrap { background: #fff; margin: 12px; padding: 12px; }
+    .print-url { display: block !important; font-size: 9px; color: #888; text-align: center; padding: 8px 12px 12px; font-family: monospace; }
+  }
+  .print-url { display: none; }
+
+  /* PRINT ALL button */
+  .print-all-bar {
+    max-width: 860px; margin: 0 auto 0; padding: 0 24px 20px;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .print-all-btn {
+    background: #E8A850; color: #1A0F0A; border: none; border-radius: 10px;
+    padding: 11px 24px; cursor: pointer; font-weight: 800; font-size: 13px;
+    font-family: inherit; transition: background .2s;
+  }
+  .print-all-btn:hover { background: #F5C97A; }
+  .print-hint { font-size: 11px; color: #555; }
+
+  /* ── BEACH BACKGROUND ── */
+  .beach-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url('beach-bg.jpg');
+    background-size: cover; background-position: center top; background-repeat: no-repeat;
+  }
+  .beach-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: rgba(245,240,230,0.82);
+  }
+
+  /* TEAL OVERRIDES */
+  header { background: rgba(237,232,220,.92) !important; backdrop-filter: blur(16px); border-bottom: 1px solid rgba(26,140,140,.2) !important; }
+  .logo-sub { color: #C8860A !important; }
+  .logo-title { color: #2C1A0E !important; }
+  .staff-badge { background: rgba(192,57,43,.08) !important; border-color: rgba(192,57,43,.25) !important; color: #C0392B !important; }
+  .nav-link { background: rgba(253,250,244,.7) !important; border-color: rgba(26,140,140,.2) !important; color: #6A5848 !important; }
+  .nav-link:hover { color: #0F6060 !important; }
+  .page-info { position: relative; z-index: 1; }
+  .page-title { color: #2C1A0E !important; }
+  .page-sub { color: #8A7060 !important; }
+  .page-note { background: rgba(200,134,10,.08) !important; border-color: rgba(200,134,10,.25) !important; color: #C8860A !important; }
+  .qr-grid { position: relative; z-index: 1; }
+  .qr-card { background: rgba(253,250,244,.92) !important; backdrop-filter: blur(10px); border-color: rgba(26,140,140,.2) !important; }
+  .qr-card:hover { border-color: #1A8C8C !important; }
+  .qr-card-header { border-bottom-color: rgba(26,140,140,.12) !important; }
+  .table-label { color: #2C1A0E !important; }
+  .table-sub { color: #8A7060 !important; }
+  .table-num-badge { background: rgba(26,140,140,.1) !important; border-color: rgba(26,140,140,.3) !important; color: #1A8C8C !important; }
+  .qr-wrap { background: #fff !important; border-radius: 10px; }
+  .qr-url { background: rgba(245,240,230,.8) !important; color: #8A7060 !important; }
+  .print-btn { background: rgba(26,140,140,.1) !important; border-color: rgba(26,140,140,.3) !important; color: #1A8C8C !important; }
+  .print-btn:hover { background: rgba(26,140,140,.2) !important; }
+  .test-btn { background: rgba(46,128,72,.08) !important; border-color: rgba(46,128,72,.2) !important; color: #2E8048 !important; }
+  .print-all-bar { position: relative; z-index: 1; }
+  .print-all-btn { background: #1A8C8C !important; color: #fff !important; }
+  .print-all-btn:hover { background: #22AAAA !important; }
+  .print-hint { color: #8A7060 !important; }
+</style>
+</head>
+<body>
+<div class="beach-bg"></div>
+<div class="beach-overlay"></div>
+
+
+<header>
+  <div>
+    <div class="logo-sub">Feel of Goa</div>
+    <div class="logo-title">🪑 Table QR Codes</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="staff-badge">🔐 Staff Only</div>
+    <div class="nav-links">
+      <a href="admin.html" class="nav-link">📋 Admin</a>
+      <a href="chef.html" class="nav-link">👨‍🍳 Chef</a>
+    </div>
+  </div>
+</header>
+
+<div class="page-info">
+  <div class="page-title">Table QR Codes</div>
+  <div class="page-sub">Each QR code is unique to its table. Customers can only order from their own table.</div>
+  <div class="page-note">💡 Print and place each QR code on the matching table. Customers cannot access any other table's menu.</div>
+</div>
+
+<div class="print-all-bar" style="margin-top:20px;">
+  <button class="print-all-btn" onclick="window.print()">🖨 Print All QR Codes</button>
+  <span class="print-hint">Opens your browser's print dialog — save as PDF or print directly</span>
+</div>
+
+<div class="qr-grid" id="qrGrid"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const TABLES = [1, 2, 3]; // Add more table numbers here if needed
+
+// Build the base URL — works both locally and when hosted
+function getBaseUrl() {
+  const loc = window.location.href;
+  return loc.substring(0, loc.lastIndexOf('/') + 1) + 'menu.html';
+}
+
+function buildQRCards() {
+  const grid = document.getElementById("qrGrid");
+  const baseUrl = getBaseUrl();
+
+  TABLES.forEach(tableNum => {
+    const menuUrl = `${baseUrl}?table=${tableNum}`;
+
+    // Card
+    const card = document.createElement("div");
+    card.className = "qr-card";
+    card.innerHTML = `
+      <div class="qr-card-header">
+        <div>
+          <div class="table-label">Table ${tableNum}</div>
+          <div class="table-sub">Scan to order</div>
+        </div>
+        <div class="table-num-badge">${tableNum}</div>
+      </div>
+      <div class="qr-wrap" id="qr-wrap-${tableNum}">
+        <div class="qr-loading">
+          <div class="qr-spinner"></div>
+          <span style="font-size:11px;color:#aaa">Generating…</span>
+        </div>
+      </div>
+      <div class="qr-url">${menuUrl}</div>
+      <div class="print-url">${menuUrl}</div>
+      <div class="qr-card-footer">
+        <button class="print-btn" onclick="printTable(${tableNum})">🖨 Print</button>
+        <a class="test-btn" href="${menuUrl}" target="_blank">🔗 Test</a>
+      </div>`;
+    grid.appendChild(card);
+
+    // Generate real QR into the wrap div
+    setTimeout(() => {
+      const wrap = document.getElementById(`qr-wrap-${tableNum}`);
+      wrap.innerHTML = ""; // clear spinner
+      try {
+        new QRCode(wrap, {
+          text: menuUrl,
+          width: 200,
+          height: 200,
+          colorDark: "#1A0F0A",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H,
+        });
+      } catch(e) {
+        // Fallback to API-based QR if lib fails
+        wrap.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(menuUrl)}&bgcolor=ffffff&color=1A0F0A&ecc=H&margin=1" width="200" height="200" style="display:block" />`;
+      }
+    }, tableNum * 300); // stagger generation slightly
+  });
+}
+
+function printTable(tableNum) {
+  // Open just that table's QR in a print-friendly popup
+  const baseUrl = getBaseUrl();
+  const menuUrl = `${baseUrl}?table=${tableNum}`;
+  const win = window.open("", "_blank", "width=400,height=500");
+  win.document.write(`
+    <!DOCTYPE html><html><head><title>Table ${tableNum} QR</title>
+    <style>
+      body { margin: 40px; font-family: Georgia, serif; text-align: center; background: #fff; }
+      h2 { font-size: 28px; margin-bottom: 4px; }
+      p { color: #888; font-size: 13px; margin-bottom: 20px; }
+      .url { font-size: 9px; color: #aaa; font-family: monospace; margin-top: 12px; word-break: break-all; }
+      .brand { font-size: 11px; letter-spacing: .2em; color: #aaa; text-transform: uppercase; margin-bottom: 6px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    </head><body>
+    <div class="brand">Feel of Goa</div>
+    <h2>Table ${tableNum}</h2>
+    <p>Scan to view menu & order</p>
+    <div id="qr" style="display:flex;justify-content:center;"></div>
+    <div class="url">${menuUrl}</div>
+    <script>
+      new QRCode(document.getElementById("qr"),{
+        text:"${menuUrl}",width:220,height:220,
+        colorDark:"#1A0F0A",colorLight:"#ffffff",
+        correctLevel:QRCode.CorrectLevel.H
+      });
+      setTimeout(()=>window.print(), 800);
+    <\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+buildQRCards();
+</script>
+</body>
+</html>
