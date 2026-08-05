@@ -1,10 +1,7 @@
 // ── FIREBASE CONFIG — Feel of Goa Family Restaurant ──────────────────
-// This file is loaded as a <script type="module"> from menu.html, admin.html, chef.html.
-// It exposes window.fb* functions and fires "firebase-ready" / "firebase-error" events.
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, onSnapshot,
+  initializeFirestore, collection, addDoc, onSnapshot,
   doc, updateDoc, deleteDoc, query, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -24,7 +21,6 @@ function markReady() {
   window.fbReady = true;
   window.dispatchEvent(new Event("firebase-ready"));
 }
-
 function markError(err) {
   console.error("Firebase init error:", err);
   window.fbError = err;
@@ -32,82 +28,51 @@ function markError(err) {
 }
 
 try {
-    const app = initializeApp(firebaseConfig);
-
-    db = getFirestore(app);
-    console.log("Firestore DB:", db);
-
-    ordersCol = collection(db, "orders");
-    console.log("Orders Collection:", ordersCol);
-
-    markReady();
+  const app = initializeApp(firebaseConfig);
+  // Force long-polling instead of streaming — mobile networks/Data Saver
+  // often silently break the default streaming connection. Long-polling
+  // uses plain HTTP requests instead, same as the writes that already work.
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    useFetchStreams: false
+  });
+  ordersCol = collection(db, "orders");
+  markReady();
 } catch (err) {
-    markError(err);
+  markError(err);
 }
 
-// ── Add a new order (called from menu.html) ──────────────────────────
 window.fbAddOrder = function(order) {
   if (!ordersCol) return Promise.reject(new Error("Firebase not initialized"));
-  return addDoc(ordersCol, {
-    ...order,
-    createdAt: serverTimestamp()
-  });
+  return addDoc(ordersCol, { ...order, createdAt: serverTimestamp() });
 };
 
-// ── Listen live for all orders (called from admin.html / chef.html) ──
-// callback(orders, error?) — orders is [] on error, error is the Firestore error object
 window.fbListenOrders = function(callback) {
   if (!ordersCol) {
     callback([], new Error("Firebase not initialized"));
     return () => {};
   }
-  let q;
-  try {
-    q = query(ordersCol);
-  } catch (e) {
-    // If index/orderBy fails for any reason, fall back to unordered query
-    q = ordersCol;
-  }
   return onSnapshot(
-  q,
-  (snapshot) => {
-    console.log("✅ Firestore Connected");
-    console.log("Documents:", snapshot.size);
-
-    const orders = [];
-
-    snapshot.forEach((docSnap) => {
-      orders.push({ ...docSnap.data(), docId: docSnap.id });
-    });
-
-    orders.sort((a, b) => {
-      const ta = a.createdAt?.seconds || 0;
-      const tb = b.createdAt?.seconds || 0;
-      return tb - ta;
-    });
-
-    callback(orders, null);
-  },
-  (error) => {
-    console.error("Firestore Error Code:", error.code);
-    console.error("Firestore Error:", error);
-
-    alert("Firestore Error: " + error.code + "\n" + error.message);
-
-    callback([], error);
-  }
-);
+    query(ordersCol),
+    (snapshot) => {
+      const orders = [];
+      snapshot.forEach((docSnap) => orders.push({ ...docSnap.data(), docId: docSnap.id }));
+      orders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      callback(orders, null);
+    },
+    (error) => {
+      console.error("fbListenOrders error:", error);
+      callback([], error);
+    }
+  );
 };
 
-// ── Update an order's status (called from admin.html / chef.html) ────
 window.fbUpdateOrderStatus = function(docId, status) {
   if (!db) return Promise.reject(new Error("Firebase not initialized"));
   return updateDoc(doc(db, "orders", docId), { status });
 };
 
-// ── Delete an order (used by "Clear Served") ──────────────────────────
 window.fbDeleteOrder = function(docId) {
   if (!db) return Promise.reject(new Error("Firebase not initialized"));
   return deleteDoc(doc(db, "orders", docId));
 };
-
