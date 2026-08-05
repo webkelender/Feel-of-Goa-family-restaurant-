@@ -32,12 +32,17 @@ function markError(err) {
 }
 
 try {
-  const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  ordersCol = collection(db, "orders");
-  markReady();
+    const app = initializeApp(firebaseConfig);
+
+    db = getFirestore(app);
+    console.log("Firestore DB:", db);
+
+    ordersCol = collection(db, "orders");
+    console.log("Orders Collection:", ordersCol);
+
+    markReady();
 } catch (err) {
-  markError(err);
+    markError(err);
 }
 
 // ── Add a new order (called from menu.html) ──────────────────────────
