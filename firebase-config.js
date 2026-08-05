@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, collection, addDoc, onSnapshot,
-  doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp
+  doc, updateDoc, deleteDoc, query, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -58,7 +58,7 @@ window.fbListenOrders = function(callback) {
   }
   let q;
   try {
-    q = query(ordersCol, orderBy("timestamp", "desc"));
+    q = query(ordersCol);
   } catch (e) {
     // If index/orderBy fails for any reason, fall back to unordered query
     q = ordersCol;
