@@ -64,21 +64,34 @@ window.fbListenOrders = function(callback) {
     q = ordersCol;
   }
   return onSnapshot(
-    q,
-    (snapshot) => {
-      const orders = [];
-      snapshot.forEach((docSnap) => {
-        orders.push({ ...docSnap.data(), docId: docSnap.id });
-      });
-      // Client-side safety sort in case server-side orderBy wasn't applied
-      orders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      callback(orders, null);
-    },
-    (error) => {
-      console.error("fbListenOrders error:", error);
-      callback([], error);
-    }
-  );
+  q,
+  (snapshot) => {
+    console.log("✅ Firestore Connected");
+    console.log("Documents:", snapshot.size);
+
+    const orders = [];
+
+    snapshot.forEach((docSnap) => {
+      orders.push({ ...docSnap.data(), docId: docSnap.id });
+    });
+
+    orders.sort((a, b) => {
+      const ta = a.createdAt?.seconds || 0;
+      const tb = b.createdAt?.seconds || 0;
+      return tb - ta;
+    });
+
+    callback(orders, null);
+  },
+  (error) => {
+    console.error("Firestore Error Code:", error.code);
+    console.error("Firestore Error:", error);
+
+    alert("Firestore Error: " + error.code + "\n" + error.message);
+
+    callback([], error);
+  }
+);
 };
 
 // ── Update an order's status (called from admin.html / chef.html) ────
