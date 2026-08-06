@@ -44,9 +44,6 @@ function docIdFromName(name) {
   return name.split("/").pop();
 }
 
-window.fbReady = true;
-window.dispatchEvent(new Event("firebase-ready"));
-
 window.fbAddOrder = async function (order) {
   const body = { fields: toFirestoreFields({ ...order, createdAt: new Date().toISOString() }) };
   const res = await fetch(`${BASE}/orders?key=${API_KEY}`, {
@@ -101,3 +98,8 @@ window.fbDeleteOrder = async function (docId) {
   if (!res.ok) throw new Error("Failed to delete order (HTTP " + res.status + ")");
   return true;
 };
+
+// Mark ready LAST — only now that every window.fb* function above
+// actually exists, so anything reacting to this event can call them safely.
+window.fbReady = true;
+window.dispatchEvent(new Event("firebase-ready"));
