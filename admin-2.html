@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Feel of Goa Family Restaurant — Admin</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<script type="module" src="firebase-config.js"></script>
+<script nomodule>window.fbModulesUnsupported = true;</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F5F0E8; --card: rgba(253,250,244,.92); --card2: rgba(245,240,230,.88);
+    --border: rgba(26,140,140,.15); --text: #2C1A0E; --muted: #8A7060;
+    --amber: #C8860A; --blue: #1A8C8C; --orange: #D4780A;
+    --green: #2E8048; --red: #C0392B;
+  }
+  html, body { min-height: 100%; background: #F5F0E8; color: var(--text); font-family: system-ui, -apple-system, sans-serif; }
+
+  /* BEACH BACKGROUND */
+  .beach-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url('beach-bg.jpg');
+    background-size: cover; background-position: center top; background-repeat: no-repeat;
+  }
+  .beach-overlay {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: rgba(245,240,230,0.70);
+  }
+
+  /* HEADER */
+  header {
+    background: rgba(237,232,220,.92); backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(26,140,140,.2);
+    padding: 12px 16px; position: sticky; top: 0; z-index: 100; overflow: hidden;
+  }
+  .header-row1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-icon { font-size: 20px; }
+  .logo-sub { font-size: 9px; letter-spacing: .2em; color: var(--amber); text-transform: uppercase; }
+  .logo-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .live-badge {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+    background: rgba(46,128,72,.1); border: 1px solid rgba(46,128,72,.3);
+    color: var(--green); border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600;
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* HAMBURGER */
+  .hamburger-btn { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; padding: 6px; }
+  .hamburger-btn span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: all .3s; }
+
+  /* DRAWER OVERLAY - hidden by default */
+  .drawer-overlay {
+    position: fixed; inset: 0; background: rgba(20,12,6,.55);
+    backdrop-filter: blur(2px); z-index: 300;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .drawer-overlay.open { opacity: 1; pointer-events: all; }
+  /* DRAWER PANEL - hidden off screen to the right by default */
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 280px;
+    background: #FAF6EE;
+    border-left: 1px solid rgba(26,140,140,.2); z-index: 400;
+    display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform .28s ease;
+    overflow-y: auto;
+    box-shadow: -12px 0 40px rgba(0,0,0,.25);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-header {
+    padding: 18px 20px; border-bottom: 1px solid rgba(26,140,140,.15);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .drawer-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .drawer-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+  .drawer-close:hover { color: var(--text); }
+  .drawer-section-label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); padding: 16px 20px 8px; }
+  .drawer-item {
+    display: flex; align-items: center; gap: 14px; padding: 13px 20px;
+    text-decoration: none; color: var(--text); border-bottom: 1px solid rgba(26,140,140,.1);
+    transition: background .15s; cursor: pointer; border: none; width: 100%;
+    text-align: left; font-family: inherit; font-size: 14px; background: none;
+    border-bottom: 1px solid rgba(26,140,140,.1);
+  }
+  .drawer-item:hover { background: rgba(26,140,140,.06); }
+  .drawer-item-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+  .drawer-item-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .drawer-item-sub { font-size: 11px; color: var(--muted); }
+  .drawer-item-arrow { color: var(--muted); font-size: 12px; }
+  .drawer-divider { height: 1px; background: rgba(26,140,140,.12); margin: 4px 0; }
+  .drawer-footer { margin-top: auto; padding: 16px 20px; border-top: 1px solid rgba(26,140,140,.12); }
+  .drawer-clear-btn {
+    width: 100%; background: rgba(192,57,43,.1); border: 1px solid rgba(192,57,43,.3);
+    color: var(--red); border-radius: 10px; padding: 11px; cursor: pointer;
+    font-size: 13px; font-weight: 700; font-family: inherit; transition: background .2s; display: none;
+  }
+  .drawer-clear-btn:hover { background: rgba(192,57,43,.2); }
+  .drawer-update { font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+  /* STATS BAR */
+  .stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 14px 16px; background: transparent; }
+  .stat-card {
+    background: rgba(253,250,244,.88); backdrop-filter: blur(8px);
+    border: 1px solid rgba(26,140,140,.15); border-radius: 12px; padding: 12px 10px; cursor: pointer; transition: all .2s;
+  }
+  .stat-card:hover, .stat-card.active { border-color: var(--stat-color,var(--blue)); background: color-mix(in srgb, var(--stat-color,var(--blue)) 8%, rgba(253,250,244,.92)); }
+  .stat-num { font-size: 22px; font-weight: 800; color: var(--stat-color,var(--text)); margin-bottom: 3px; }
+  .stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; line-height: 1.3; }
+
+  /* FILTERS */
+  .filters { display: flex; gap: 8px; padding: 0 16px 14px; flex-wrap: wrap; background: transparent; }
+  .filter-pill {
+    background: transparent; border: 1px solid rgba(26,140,140,.2); color: var(--muted);
+    border-radius: 20px; padding: 5px 14px; cursor: pointer; font-size: 11px; font-weight: 600;
+    font-family: inherit; transition: all .2s;
+  }
+  .filter-pill.active { background: rgba(26,140,140,.12); border-color: rgba(26,140,140,.4); color: #0F6060; }
+  .filter-pill:hover:not(.active) { color: var(--text); border-color: rgba(26,140,140,.3); }
+
+  /* ORDER CARDS */
+  .orders-wrap { padding: 0 16px 32px; background: transparent; }
+  .order-card {
+    background: rgba(253,250,244,.90); backdrop-filter: blur(8px);
+    border: 1px solid rgba(26,140,140,.15); border-radius: 12px;
+    margin-bottom: 10px; overflow: hidden; border-left-width: 3px;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+  .order-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px 10px; }
+  .order-table { font-size: 18px; font-weight: 800; color: var(--text); }
+  .order-id { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .order-right { text-align: right; }
+  .status-badge { display: inline-block; border-radius: 12px; padding: 3px 10px; font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 4px; }
+  .order-time { font-size: 10px; color: var(--muted); }
+  .order-items { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
+  .item-chip { background: rgba(26,140,140,.08); border-radius: 6px; padding: 4px 9px; font-size: 11px; color: var(--text); }
+  .order-note { margin: 0 16px 10px; background: rgba(212,120,10,.08); border: 1px solid rgba(212,120,10,.25); border-radius: 7px; padding: 7px 10px; font-size: 11px; color: var(--orange); }
+  .order-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px 14px; border-top: 1px solid rgba(26,140,140,.1); }
+  .order-total { color: var(--blue); font-weight: 800; font-size: 15px; }
+  .status-info-pill { border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; backdrop-filter: blur(4px); }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-icon { font-size: 44px; margin-bottom: 14px; }
+  .empty-title { font-size: 15px; margin-bottom: 6px; color: var(--text); }
+  .empty-sub { font-size: 12px; }
+
+  /* ALERT */
+  .new-order-alert {
+    position: fixed; top: 80px; right: 24px; z-index: 200;
+    background: #1A8C8C; color: #fff; border-radius: 12px; padding: 12px 18px;
+    font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.2); animation: slideLeft .3s ease;
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+  }
+  .new-order-alert.show { opacity: 1; pointer-events: auto; }
+  @keyframes slideLeft { from{transform:translateX(60px)} to{transform:none} }
+
+  /* SALES (inside drawer) */
+  .sales-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 14px; }
+  .sale-stat { background: rgba(245,240,230,.8); backdrop-filter: blur(4px); border: 1px solid rgba(26,140,140,.12); border-radius: 10px; padding: 12px 14px; }
+  .sale-stat-val { font-size: 20px; font-weight: 800; color: var(--blue); margin-bottom: 2px; }
+  .sale-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+  .top-items-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .top-item-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(26,140,140,.08); }
+  .top-item-row:last-child { border-bottom: none; }
+  .top-item-rank { font-size: 11px; font-weight: 800; color: var(--muted); width: 16px; flex-shrink: 0; }
+  .top-item-name { font-size: 12px; color: var(--text); flex: 1; }
+  .top-item-qty { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .top-item-rev { font-size: 12px; font-weight: 700; color: var(--blue); flex-shrink: 0; min-width: 60px; text-align: right; }
+  .top-item-bar-wrap { width: 60px; flex-shrink: 0; }
+  .top-item-bar { height: 4px; background: rgba(26,140,140,.12); border-radius: 4px; overflow: hidden; }
+  .top-item-bar-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width .5s; }
+
+  /* SWIPE PREVENTION */
+  html, body { overscroll-behavior-x: none; touch-action: pan-y; }
+
+  @media(max-width:600px) {
+    .orders-wrap, .stats-bar, .filters { padding-left: 12px; padding-right: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="beach-bg"></div>
+<div class="beach-overlay"></div>
+
+<!-- DIAGNOSTIC BADGE — tap to see connection status, helps debug without dev tools -->
+<div id="diagBadge" onclick="document.getElementById('diagPanel').style.display = document.getElementById('diagPanel').style.display === 'block' ? 'none' : 'block'"
+  style="position:fixed;bottom:8px;right:8px;z-index:9999;width:14px;height:14px;border-radius:50%;background:#C8860A;box-shadow:0 0 6px rgba(0,0,0,.4);cursor:pointer;"></div>
+<div id="diagPanel" style="display:none;position:fixed;bottom:30px;right:8px;z-index:9999;background:#1a1a1a;color:#eee;font-family:monospace;font-size:11px;padding:12px 14px;border-radius:10px;max-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.5);line-height:1.6;"></div>
+
+<header>
+  <div class="header-row1">
+    <div class="logo">
+      <div class="logo-icon">📋</div>
+      <div>
+        <div class="logo-sub">Feel of Goa</div>
+        <div class="logo-title">Admin Dashboard</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="live-badge" id="liveBadge"><div class="live-dot"></div> Live</div>
+      <button class="hamburger-btn" onclick="openDrawer()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">⚙️ Options</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+
+  <div class="drawer-section-label">Navigate</div>
+
+  <a class="drawer-item" href="menu.html" target="_blank">
+    <div class="drawer-item-icon">🛒</div>
+    <div class="drawer-item-info">
+      <div class="drawer-item-title">View Menu</div>
+      <div class="drawer-item-sub">Browse the customer menu card</div>
+    </div>
+    <div class="drawer-item-arrow">›</div>
+  </a>
+
+  <a class="drawer-item" href="chef.html">
+    <div class="drawer-item-icon">👨‍🍳</div>
+    <div class="drawer-item-info">
+      <div class="drawer-item-title">Chef Display</div>
+      <div class="drawer-item-sub">Kitchen order management screen</div>
+    </div>
+    <div class="drawer-item-arrow">›</div>
+  </a>
+
+  <a class="drawer-item" href="qr-tables.html">
+    <div class="drawer-item-icon">🪑</div>
+    <div class="drawer-item-info">
+      <div class="drawer-item-title">Table QR Codes</div>
+      <div class="drawer-item-sub">Generate & print table QR codes</div>
+    </div>
+    <div class="drawer-item-arrow">›</div>
+  </a>
+
+  <div class="drawer-divider"></div>
+  <div class="drawer-section-label">Analytics</div>
+
+  <button class="drawer-item" onclick="toggleDrawerSales()">
+    <div class="drawer-item-icon">📊</div>
+    <div class="drawer-item-info">
+      <div class="drawer-item-title">Sales Summary</div>
+      <div class="drawer-item-sub">Revenue, top items & order stats</div>
+    </div>
+    <div class="drawer-item-arrow" id="salesArrow">›</div>
+  </button>
+
+  <!-- SALES PANEL INSIDE DRAWER -->
+  <div id="drawerSalesBody" style="display:none;padding:14px 20px 6px;border-top:1px solid var(--border);">
+    <div class="sales-grid" style="margin-bottom:14px;">
+      <div class="sale-stat"><div class="sale-stat-val" id="saleTotalRev">₹0</div><div class="sale-stat-label">Total Revenue</div></div>
+      <div class="sale-stat"><div class="sale-stat-val" id="saleTotalOrders">0</div><div class="sale-stat-label">Orders Served</div></div>
+      <div class="sale-stat"><div class="sale-stat-val" id="saleAvgOrder">₹0</div><div class="sale-stat-label">Avg Order Value</div></div>
+      <div class="sale-stat"><div class="sale-stat-val" id="saleTotalItems">0</div><div class="sale-stat-label">Items Sold</div></div>
+    </div>
+    <div class="top-items-title">🏆 Top Selling Items</div>
+    <div id="topItemsList"></div>
+  </div>
+
+  <div class="drawer-footer">
+    <button class="drawer-clear-btn" id="drawerClearBtn" onclick="clearServed();closeDrawer();">🗑 Clear Served Orders</button>
+    <div class="drawer-update" id="drawerUpdate"></div>
+  </div>
+</div>
+
+<div id="connectionBanner" style="display:none;margin:12px 16px 0;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.35);color:#C0392B;border-radius:10px;padding:12px 14px;font-size:13px;font-weight:600;position:relative;z-index:1;"></div>
+<div class="stats-bar" id="statsBar"></div>
+<div class="filters" id="filters"></div>
+<div class="orders-wrap" id="ordersWrap"></div>
+
+<div class="new-order-alert" id="newAlert">🔔 New order received!</div>
+
+<script>
+const fmt = n=>`₹${Number(n).toLocaleString("en-IN")}`;
+const timeAgo = ts=>{ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return s+"s ago"; if(s<3600)return Math.floor(s/60)+"m ago"; return Math.floor(s/3600)+"h ago"; };
+const elapsedMin = ts=>Math.floor((Date.now()-ts)/60000);
+
+// Escape any user-supplied text before inserting into innerHTML (prevents XSS)
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+const STATUS_META = {
+  received:  { label:"New Order",  color:"#5B9BD5", bg:"rgba(91,155,213,.12)", icon:"🔵", note:"Waiting for chef" },
+  preparing: { label:"Preparing",  color:"#E87040", bg:"rgba(232,112,64,.12)", icon:"🟠", note:"Chef is cooking" },
+  ready:     { label:"Ready",      color:"#4CAF7D", bg:"rgba(76,175,125,.12)", icon:"🟢", note:"Ready to serve" },
+  served:    { label:"Served",     color:"#8B949E", bg:"rgba(139,148,158,.1)", icon:"⚪", note:"Completed" },
+};
+
+let currentFilter = "all";
+let prevOrderCount = 0;
+let lastDataHash = "";
+let salesOpen = false;
+
+// ── DRAWER FUNCTIONS ─────────────────────────────────────────────
+function openDrawer() {
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("drawerOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeDrawer() {
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("drawerOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+function toggleDrawerSales() {
+  salesOpen = !salesOpen;
+  document.getElementById("drawerSalesBody").style.display = salesOpen ? "block" : "none";
+  document.getElementById("salesArrow").textContent = salesOpen ? "▼" : "›";
+  if(salesOpen) buildSales(getOrders());
+}
+
+function buildSales(orders) {
+  const served = orders.filter(o => o.status === "served");
+
+  // Totals
+  const totalRev = served.reduce((s, o) => s + o.total, 0);
+  const totalItems = served.reduce((s, o) => s + o.items.reduce((a, i) => a + i.qty, 0), 0);
+  const avgOrder = served.length ? Math.round(totalRev / served.length) : 0;
+
+  document.getElementById("saleTotalRev").textContent = fmt(totalRev);
+  document.getElementById("saleTotalOrders").textContent = served.length;
+  document.getElementById("saleAvgOrder").textContent = fmt(avgOrder);
+  document.getElementById("saleTotalItems").textContent = totalItems;
+
+  // Top items
+  const itemMap = {};
+  served.forEach(o => {
+    o.items.forEach(it => {
+      if (!itemMap[it.name]) itemMap[it.name] = { qty: 0, rev: 0 };
+      itemMap[it.name].qty += it.qty;
+      itemMap[it.name].rev += it.price * it.qty;
+    });
+  });
+
+  const sorted = Object.entries(itemMap)
+    .map(([name, d]) => ({ name, ...d }))
+    .sort((a, b) => b.rev - a.rev)
+    .slice(0, 5);
+
+  const maxRev = sorted[0]?.rev || 1;
+  const list = document.getElementById("topItemsList");
+
+  if (sorted.length === 0) {
+    list.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:10px 0;">No served orders yet — sales data will appear here once orders are marked served.</div>`;
+    return;
+  }
+
+  list.innerHTML = sorted.map((item, i) => `
+    <div class="top-item-row">
+      <div class="top-item-rank">${i + 1}</div>
+      <div class="top-item-name">${esc(item.name)}</div>
+      <div class="top-item-bar-wrap">
+        <div class="top-item-bar">
+          <div class="top-item-bar-fill" style="width:${Math.round((item.rev/maxRev)*100)}%"></div>
+        </div>
+      </div>
+      <div class="top-item-qty">${item.qty}x</div>
+      <div class="top-item-rev">${fmt(item.rev)}</div>
+    </div>`).join("");
+}
+
+let latestOrders = [];
+function getOrders() { return latestOrders; }
+
+let clearingServed = false;
+function clearServed() {
+  if (clearingServed) return; // prevent double-click firing duplicate deletes
+  const served = latestOrders.filter(o => o.status === "served" && o.docId);
+  if (served.length === 0) return;
+
+  clearingServed = true;
+  const btn = document.getElementById("drawerClearBtn");
+  const originalText = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Clearing…"; }
+
+  Promise.allSettled(served.map(o => window.fbDeleteOrder(o.docId)))
+    .then((results) => {
+      const failed = results.filter(r => r.status === "rejected").length;
+      if (failed > 0) {
+        alert(`${failed} order(s) could not be cleared. Please check your connection and try again.`);
+      }
+    })
+    .finally(() => {
+      clearingServed = false;
+      if (btn) { btn.disabled = false; btn.textContent = originalText || "🗑 Clear Served Orders"; }
+    });
+}
+
+function buildStats(orders) {
+  const counts = {all:orders.length,received:0,preparing:0,ready:0,served:0};
+  orders.forEach(o=>{ if(counts[o.status]!==undefined) counts[o.status]++; });
+  const colors = {all:"#E8A850",received:"#5B9BD5",preparing:"#E87040",ready:"#4CAF7D",served:"#8B949E"};
+  const labels = {all:"All",received:"New",preparing:"Preparing",ready:"Ready",served:"Served"};
+  const bar = document.getElementById("statsBar");
+  const keys = Object.keys(counts);
+  const existing = bar.querySelectorAll(".stat-card");
+  if (existing.length === keys.length) {
+    keys.forEach((key, i) => {
+      existing[i].className = "stat-card"+(currentFilter===key?" active":"");
+      existing[i].querySelector(".stat-num").textContent = counts[key];
+    });
+  } else {
+    bar.innerHTML = "";
+    keys.forEach(key=>{
+      const d = document.createElement("div");
+      d.className = "stat-card"+(currentFilter===key?" active":"");
+      d.style.setProperty("--stat-color", colors[key]);
+      d.innerHTML = `<div class="stat-num">${counts[key]}</div><div class="stat-label">${labels[key]}</div>`;
+      d.onclick = ()=>{ currentFilter=key; render(true); };
+      bar.appendChild(d);
+    });
+  }
+}
+
+function buildFilters(orders) {
+  const counts = {all:orders.length,received:0,preparing:0,ready:0,served:0};
+  orders.forEach(o=>{ if(counts[o.status]!==undefined) counts[o.status]++; });
+  const LABELS = {all:"All",received:"🔵 New",preparing:"🟠 Preparing",ready:"🟢 Ready",served:"⚪ Served"};
+  const wrap = document.getElementById("filters");
+
+  // Update button text only, don't rebuild
+  const keys = Object.keys(LABELS);
+  const existing = wrap.querySelectorAll(".filter-pill");
+  if (existing.length === keys.length) {
+    keys.forEach((f,i) => {
+      existing[i].className = "filter-pill"+(currentFilter===f?" active":"");
+      existing[i].textContent = LABELS[f]+" ("+counts[f]+")";
+    });
+  } else {
+    wrap.innerHTML = "";
+    keys.forEach(f=>{
+      const b = document.createElement("button");
+      b.className = "filter-pill"+(currentFilter===f?" active":"");
+      b.textContent = LABELS[f]+" ("+counts[f]+")";
+      b.onclick = ()=>{ currentFilter=f; render(true); };
+      wrap.appendChild(b);
+    });
+  }
+}
+
+function orderCardHTML(order) {
+  const sm = STATUS_META[order.status];
+  const elapsed = elapsedMin(order.timestamp);
+  return `
+    <div class="order-top">
+      <div>
+        <div class="order-table">Table ${esc(order.table)}</div>
+        <div class="order-id">#${esc(order.id)} · ${timeAgo(order.timestamp)}</div>
+      </div>
+      <div class="order-right">
+        <div class="status-badge" style="background:${sm.bg};color:${sm.color};border:1px solid ${sm.color}40">${sm.label}</div>
+        <div class="order-time">${elapsed}m waiting</div>
+      </div>
+    </div>
+    <div class="order-items">${order.items.map(it=>`<span class="item-chip">${esc(it.name)} ×${esc(it.qty)}</span>`).join("")}</div>
+    ${order.note?`<div class="order-note">📝 ${esc(order.note)}</div>`:""}
+    <div class="order-footer">
+      <div class="order-total">${fmt(order.total)}</div>
+      <div class="status-info-pill" style="background:${sm.bg};border:1px solid ${sm.color}30;color:${sm.color}">
+        ${sm.icon} ${sm.note}
+      </div>
+    </div>`;
+}
+
+function buildOrders(orders, force) {
+  const filtered = currentFilter==="all" ? orders : orders.filter(o=>o.status===currentFilter);
+  const wrap = document.getElementById("ordersWrap");
+
+  if (filtered.length===0) {
+    const msg = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">${currentFilter==="all"?"No orders yet":"No "+currentFilter+" orders"}</div><div class="empty-sub">${currentFilter==="all"?"Orders placed from the <a href='menu.html' style='color:#E8A850'>menu page</a> will appear here instantly.":"Switch filter to see other orders."}</div></div>`;
+    if (wrap.innerHTML !== msg) wrap.innerHTML = msg;
+    return;
+  }
+
+  const existingIds = new Set([...wrap.querySelectorAll(".order-card")].map(c=>c.dataset.id));
+  const newIds = new Set(filtered.map(o=>o.id));
+
+  // Build a lookup map instead of repeated querySelector with interpolated IDs
+  // (avoids crashing if an order.id ever contains quote/bracket characters)
+  const cardById = {};
+  wrap.querySelectorAll(".order-card").forEach(c => { cardById[c.dataset.id] = c; });
+
+  // Remove cards that are no longer in filtered list
+  existingIds.forEach(id => {
+    if (!newIds.has(id) && cardById[id]) {
+      cardById[id].remove();
+      delete cardById[id];
+    }
+  });
+
+  filtered.forEach((order, idx) => {
+    const sm = STATUS_META[order.status];
+    const existing = cardById[order.id];
+
+    if (existing) {
+      // Only update the parts that can change: status badge, elapsed time, status pill
+      const badge = existing.querySelector(".status-badge");
+      const timeEl = existing.querySelector(".order-time");
+      const pill = existing.querySelector(".status-info-pill");
+      const idEl = existing.querySelector(".order-id");
+
+      if (badge) { badge.textContent = sm.label; badge.style.background = sm.bg; badge.style.color = sm.color; badge.style.border = `1px solid ${sm.color}40`; }
+      if (timeEl) timeEl.textContent = elapsedMin(order.timestamp)+"m waiting";
+      if (pill) { pill.textContent = sm.icon+" "+sm.note; pill.style.background = sm.bg; pill.style.color = sm.color; }
+      if (idEl) idEl.textContent = `#${order.id} · ${timeAgo(order.timestamp)}`;
+      existing.style.borderLeftColor = sm.color;
+    } else {
+      // New card — insert at correct position
+      const card = document.createElement("div");
+      card.className = "order-card";
+      card.dataset.id = order.id;
+      card.style.borderLeftColor = sm.color;
+      card.innerHTML = orderCardHTML(order);
+
+      // Insert at correct index
+      const cards = wrap.querySelectorAll(".order-card");
+      if (idx < cards.length) {
+        wrap.insertBefore(card, cards[idx]);
+      } else {
+        wrap.appendChild(card);
+      }
+    }
+  });
+}
+
+function render(force) {
+  const orders = getOrders();
+
+  // Skip full re-render if nothing changed (only update timestamps)
+  const hash = JSON.stringify(orders.map(o=>({id:o.id,status:o.status,filter:currentFilter})));
+  const dataChanged = hash !== lastDataHash;
+  lastDataHash = hash;
+
+  buildStats(orders);
+  buildFilters(orders);
+  buildOrders(orders, force || dataChanged);
+  if(salesOpen) buildSales(orders);
+
+  const timeStr = "Updated " + new Date().toLocaleTimeString();
+  const du = document.getElementById("drawerUpdate");
+  if(du) du.textContent = timeStr;
+
+  const hasServed = orders.some(o=>o.status==="served");
+  const dcb = document.getElementById("drawerClearBtn");
+  if(dcb) dcb.style.display = hasServed ? "block" : "none";
+
+  if (orders.length > prevOrderCount && prevOrderCount > 0) showAlert();
+  prevOrderCount = orders.length;
+}
+
+function showAlert() {
+  const a = document.getElementById("newAlert");
+  a.classList.add("show");
+  setTimeout(()=>a.classList.remove("show"), 3000);
+}
+
+// ── LIVE FIRESTORE LISTENER ─────────────────────────────────────────
+function setLiveBadge(state) {
+  // state: "live" | "error" | "connecting"
+  const badge = document.getElementById("liveBadge");
+  const banner = document.getElementById("connectionBanner");
+  if (!badge) return;
+  if (state === "live") {
+    badge.innerHTML = '<div class="live-dot"></div> Live';
+    badge.style.background = "rgba(46,128,72,.1)";
+    badge.style.borderColor = "rgba(46,128,72,.3)";
+    badge.style.color = "#2E8048";
+    if (banner) banner.style.display = "none";
+  } else if (state === "error") {
+    badge.innerHTML = '⚠ Offline';
+    badge.style.background = "rgba(192,57,43,.1)";
+    badge.style.borderColor = "rgba(192,57,43,.3)";
+    badge.style.color = "#C0392B";
+    if (banner) {
+      banner.style.display = "block";
+      banner.textContent = "⚠ Not connected to the ordering system. Orders won't update until this reconnects. Check your internet connection.";
+    }
+  } else {
+    badge.innerHTML = '⏳ Connecting…';
+    badge.style.background = "rgba(200,134,10,.1)";
+    badge.style.borderColor = "rgba(200,134,10,.3)";
+    badge.style.color = "#C8860A";
+  }
+}
+
+let everConnected = false;
+
+function startListening() {
+  setLiveBadge("connecting");
+  window.fbListenOrders((orders, error) => {
+    if (error) {
+      setLiveBadge("error");
+      updateDiagPanel({ listenerError: error.message || String(error) });
+      return;
+    }
+    everConnected = true;
+    setLiveBadge("live");
+    latestOrders = orders;
+    render();
+    updateDiagPanel({});
+  });
+
+  // CRITICAL: catches the case where fbReady=true but onSnapshot never calls back
+  // (common on networks that block Firestore's WebSocket/long-polling connection)
+  setTimeout(() => {
+    if (!everConnected) {
+      setLiveBadge("error");
+      updateDiagPanel({ stuckConnecting: true });
+    }
+  }, 10000);
+}
+
+if (window.fbReady) {
+  startListening();
+} else if (window.fbError) {
+  setLiveBadge("error");
+} else {
+  setLiveBadge("connecting");
+  window.addEventListener("firebase-ready", startListening, { once: true });
+  window.addEventListener("firebase-error", () => setLiveBadge("error"), { once: true });
+  // Safety timeout in case neither event ever fires
+  setTimeout(() => {
+    if (!window.fbReady) {
+      setLiveBadge("error");
+      updateDiagPanel({ scriptNeverLoaded: true });
+    }
+  }, 12000);
+}
+
+// ── DIAGNOSTIC PANEL ─────────────────────────────────────────────
+function updateDiagPanel(extra) {
+  const dot = document.getElementById("diagBadge");
+  const panel = document.getElementById("diagPanel");
+  if (!dot || !panel) return;
+
+  let color, lines = [];
+  lines.push("URL: " + location.href.split("?")[0]);
+  lines.push("firebase-config.js loaded: " + (typeof window.fbAddOrder === "function" ? "YES" : "NO"));
+  lines.push("fbReady: " + !!window.fbReady);
+  lines.push("everConnected: " + everConnected);
+
+  if (window.fbModulesUnsupported) {
+    color = "#C0392B";
+    lines.push("STATUS: Browser blocks ES modules entirely.");
+  } else if (extra && extra.scriptNeverLoaded) {
+    color = "#C0392B";
+    lines.push("STATUS: firebase-config.js never loaded.");
+    lines.push("Check the file exists at repo root.");
+  } else if (extra && extra.stuckConnecting) {
+    color = "#C0392B";
+    lines.push("STATUS: Connected to Firebase SDK,");
+    lines.push("but Firestore realtime connection");
+    lines.push("never responded (10s timeout).");
+    lines.push("Likely a network/firewall blocking");
+    lines.push("WebSocket or long-polling to");
+    lines.push("firestore.googleapis.com");
+  } else if (extra && extra.listenerError) {
+    color = "#C0392B";
+    lines.push("STATUS: Firestore error:");
+    lines.push(extra.listenerError);
+  } else if (window.fbError) {
+    color = "#C0392B";
+    lines.push("STATUS: Init error: " + (window.fbError.message || window.fbError));
+  } else if (everConnected) {
+    color = "#2E8048";
+    lines.push("STATUS: Connected ✓ (" + latestOrders.length + " orders)");
+  } else {
+    color = "#C8860A";
+    lines.push("STATUS: Connecting…");
+  }
+
+  dot.style.background = color;
+  panel.innerHTML = lines.map(l => `<div>${String(l).replace(/</g,"&lt;")}</div>`).join("");
+}
+
+updateDiagPanel({});
+setTimeout(() => updateDiagPanel({}), 3000);
+
+// Also refresh elapsed-time labels every 30s even without new data
+setInterval(() => render(), 30000);
+
+// Prevent horizontal swipe (browser back/forward navigation)
+let touchStartX = 0;
+let touchStartY = 0;
+document.addEventListener("touchstart", e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener("touchmove", e => {
+  const dx = Math.abs(e.touches[0].clientX - touchStartX);
+  const dy = Math.abs(e.touches[0].clientY - touchStartY);
+  // If swipe is more horizontal than vertical, block it
+  if (dx > dy && dx > 10) {
+    e.preventDefault();
+  }
+}, { passive: false });
+</script>
+</body>
+</html>
