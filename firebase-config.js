@@ -1,63 +1,77 @@
 // ── FIREBASE CONFIG — Feel of Goa Family Restaurant ──────────────────
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  initializeFirestore, collection, addDoc, getDocs,
-  doc, updateDoc, deleteDoc, query, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const PROJECT_ID = "feel-of-goa-restaurant";
+const API_KEY = "AIzaSyATcb9J3gAyfHxAPuOy5yTec8ZUM7pbvWg";
+const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyATcb9J3gAyfHxAPuOy5yTec8ZUM7pbvWg",
-  authDomain: "feel-of-goa-restaurant.firebaseapp.com",
-  projectId: "feel-of-goa-restaurant",
-  storageBucket: "feel-of-goa-restaurant.firebasestorage.app",
-  messagingSenderId: "352840727097",
-  appId: "1:352840727097:web:103f688735d607f726abe8"
-};
-
-let db = null;
-let ordersCol = null;
-
-function markReady() {
-  window.fbReady = true;
-  window.dispatchEvent(new Event("firebase-ready"));
-}
-function markError(err) {
-  console.error("Firebase init error:", err);
-  window.fbError = err;
-  window.dispatchEvent(new CustomEvent("firebase-error", { detail: err }));
-}
-
-try {
-  const app = initializeApp(firebaseConfig);
-  db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-    useFetchStreams: false
-  });
-  ordersCol = collection(db, "orders");
-  markReady();
-} catch (err) {
-  markError(err);
-}
-
-window.fbAddOrder = function(order) {
-  if (!ordersCol) return Promise.reject(new Error("Firebase not initialized"));
-  return addDoc(ordersCol, { ...order, createdAt: serverTimestamp() });
-};
-
-window.fbListenOrders = function(callback) {
-  if (!ordersCol) {
-    callback([], new Error("Firebase not initialized"));
-    return () => {};
+function toFirestoreValue(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === "string") return { stringValue: v };
+  if (typeof v === "boolean") return { booleanValue: v };
+  if (typeof v === "number") {
+    return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
   }
+  if (Array.isArray(v)) {
+    return { arrayValue: { values: v.map(toFirestoreValue) } };
+  }
+  if (typeof v === "object") {
+    return { mapValue: { fields: toFirestoreFields(v) } };
+  }
+  return { stringValue: String(v) };
+}
+function toFirestoreFields(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) fields[k] = toFirestoreValue(v);
+  return fields;
+}
+function fromFirestoreValue(v) {
+  if (!v) return null;
+  if ("stringValue" in v) return v.stringValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return v.doubleValue;
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("nullValue" in v) return null;
+  if ("timestampValue" in v) return v.timestampValue;
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(fromFirestoreValue);
+  if ("mapValue" in v) return fromFirestoreFields(v.mapValue.fields || {});
+  return null;
+}
+function fromFirestoreFields(fields) {
+  const obj = {};
+  for (const [k, v] of Object.entries(fields || {})) obj[k] = fromFirestoreValue(v);
+  return obj;
+}
+function docIdFromName(name) {
+  return name.split("/").pop();
+}
+
+window.fbReady = true;
+window.dispatchEvent(new Event("firebase-ready"));
+
+window.fbAddOrder = async function (order) {
+  const body = { fields: toFirestoreFields({ ...order, createdAt: new Date().toISOString() }) };
+  const res = await fetch(`${BASE}/orders?key=${API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error("Failed to add order (HTTP " + res.status + ")");
+  return res.json();
+};
+
+window.fbListenOrders = function (callback) {
   let stopped = false;
   const POLL_MS = 5000;
   async function poll() {
     if (stopped) return;
     if (!document.hidden) {
       try {
-        const snapshot = await getDocs(query(ordersCol));
-        const orders = [];
-        snapshot.forEach((docSnap) => orders.push({ ...docSnap.data(), docId: docSnap.id }));
+        const res = await fetch(`${BASE}/orders?key=${API_KEY}`);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const orders = (data.documents || []).map((d) => ({
+          ...fromFirestoreFields(d.fields),
+          docId: docIdFromName(d.name),
+        }));
         orders.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         callback(orders, null);
       } catch (error) {
@@ -71,12 +85,19 @@ window.fbListenOrders = function(callback) {
   return () => { stopped = true; };
 };
 
-window.fbUpdateOrderStatus = function(docId, status) {
-  if (!db) return Promise.reject(new Error("Firebase not initialized"));
-  return updateDoc(doc(db, "orders", docId), { status });
+window.fbUpdateOrderStatus = async function (docId, status) {
+  const body = { fields: { status: { stringValue: status } } };
+  const res = await fetch(`${BASE}/orders/${docId}?updateMask.fieldPaths=status&key=${API_KEY}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error("Failed to update status (HTTP " + res.status + ")");
+  return res.json();
 };
 
-window.fbDeleteOrder = function(docId) {
-  if (!db) return Promise.reject(new Error("Firebase not initialized"));
-  return deleteDoc(doc(db, "orders", docId));
+window.fbDeleteOrder = async function (docId) {
+  const res = await fetch(`${BASE}/orders/${docId}?key=${API_KEY}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete order (HTTP " + res.status + ")");
+  return true;
 };
