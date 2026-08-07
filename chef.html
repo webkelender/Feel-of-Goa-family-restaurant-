@@ -203,9 +203,16 @@ function advanceOrder(id, nextStatus) {
   if (!order || !order.docId) return;
 
   advancingIds.add(id);
+
+  const previousStatus = order.status;
+  order.status = nextStatus;
+  render();
+
   window.fbUpdateOrderStatus(order.docId, nextStatus)
     .catch((err) => {
       console.error(err);
+      order.status = previousStatus;
+      render();
       alert("Could not update order status. Please check your connection and try again.");
     })
     .finally(() => {
