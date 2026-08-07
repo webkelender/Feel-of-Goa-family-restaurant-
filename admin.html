@@ -396,10 +396,17 @@ function clearServed() {
   const originalText = btn ? btn.textContent : "";
   if (btn) { btn.disabled = true; btn.textContent = "Clearing…"; }
 
+  const servedIds = new Set(served.map(o => o.docId));
+  const previousOrders = latestOrders;
+  latestOrders = latestOrders.filter(o => !servedIds.has(o.docId));
+  render();
+
   Promise.allSettled(served.map(o => window.fbDeleteOrder(o.docId)))
     .then((results) => {
       const failed = results.filter(r => r.status === "rejected").length;
       if (failed > 0) {
+        latestOrders = previousOrders;
+        render();
         alert(`${failed} order(s) could not be cleared. Please check your connection and try again.`);
       }
     })
